@@ -1,10 +1,10 @@
-const uint8_t EN1    = 6;        // № вывода Arduino к которому подключены входы драйвера L_EN и R_EN. Можно указать любой вывод Arduino поддерживающий ШИМ.
-const uint8_t L_PWM1 = 8;        // № вывода Arduino к которому подключён  вход  драйвера L_PWM.       Можно указать любой вывод Arduino, как цифровой, так и аналоговый.
-const uint8_t R_PWM1 = 7;        // № вывода Arduino к которому подключён  вход  драйвера R_PWM.       Можно указать любой вывод Arduino, как цифровой, так и аналоговый.
-const uint8_t EN2    = 10;
+const uint8_t EN1    = 6;       //Левые колёса
+const uint8_t L_PWM1 = 8;       
+const uint8_t R_PWM1 = 7;       
+const uint8_t EN2    = 10;      //Правые колёса
 const uint8_t L_PWM2 = 11;
 const uint8_t R_PWM2 = 12;
-const float rad = 0.06;          //Радиус колес, м
+const float rad = 0.06;          //Радиус колёс, м
 int val;
 int LED = 13;
 int times = 0;
@@ -14,11 +14,13 @@ float num_rev;               //Кол-во оборотов колеса
 float d = 0;
 int stop_flag = 0;
 int direct;
-int count;
+int count = 0;
 int flag = 0;
 int flag_ch = 0;
+float distanse;
+int flag_dist = 0;
 
-void move_forvard() {                              //2
+void move_forvard() {                              
     delay(2);
     digitalWrite(L_PWM1, LOW );  
     digitalWrite(R_PWM1, HIGH);  
@@ -29,7 +31,7 @@ void move_forvard() {                              //2
     analogWrite (EN2,    140 ); 
 }
 
-void move_back() {                                 //4
+void move_back() {                                 
     delay(2);
     digitalWrite(L_PWM1, HIGH);  
     digitalWrite(R_PWM1, LOW );  
@@ -40,7 +42,7 @@ void move_back() {                                 //4
     digitalWrite(EN2,    140 );
 }
 
-void stop_move() {                                 //5
+void stop_move() {                                 
     delay(2);
     digitalWrite(L_PWM1, HIGH); 
     digitalWrite(R_PWM1, HIGH);  
@@ -51,7 +53,7 @@ void stop_move() {                                 //5
     analogWrite (EN2,    0 );
 }
 
-void turn_right() {                                 //3
+void turn_right() {                                 
     delay(2);
     digitalWrite(L_PWM2, LOW );    //Правые колеса вперед
     digitalWrite(R_PWM2, HIGH);  
@@ -62,7 +64,7 @@ void turn_right() {                                 //3
     analogWrite (EN1,    140 );
 }
 
-void turn_left() {                                   //1
+void turn_left() {                                   
     delay(2);
     digitalWrite(L_PWM1, LOW );    //Левые колеса вперед
     digitalWrite(R_PWM1, HIGH);  
@@ -110,36 +112,92 @@ void setup() {
 
 void loop()
 {
-    /*switch (val) {
-      case 'a':
+  /*if (millis()%500 == 0){
+  Serial3.print(direct);
+  Serial3.print(" c= ");
+  Serial3.println(count);}*/
+    //Serial.print("direct = ");
+    //Serial.print(int(direct - '0'));
+    //Serial.print(", count = ");
+    //Serial.println(int(count - '0'));
+    switch (direct) {
+      case '1':                            //Поворот налево на определённый угол (2-45, 4-90, 9-180)
         //Serial.println("Turning left");
+        if (count != 0){
+          flag_dist = 1;
+        distanse = (count - '0')/20.3;
+        flag_ch = 1;
         turn_left();
+        direct = 0;
+        count = 0;
+        }
         break;
-      case 119:
-        Serial.println("Moving forward");
+      case '2':                                   //Движение вперед на определённое расстояние
+        //Serial.println("Moving forward");
+        if (count != 0){
+          flag_dist = 1;
+        distanse = count - '0';
+        flag_ch = 1;
         move_forvard();
-        delay(20);
+        //delay(20);
+        direct = 0;
+        count = 0;
+        }
         break;
-      case 'd':
+      case '3':                                  //Поворот направо на определённый угол (2-45, 4-90, 9-180)
         //Serial.println("Turning right");
+        if (count != 0){
+          flag_dist = 1;
+        distanse = (count - '0')/20.3;
+        Serial.print("distanse = ");
+        Serial.println(distanse);
+        flag_ch = 1;
         turn_right();
+        direct = 0;
+        count = 0;
+        }
         break;
-      case 's':
+      case '4':                                  //Движение назад на определённое расстояние
         //Serial.println("Moving back");
+        if (count != 0){
+          flag_dist = 1;
+        distanse = count - '0';
+        flag_ch = 1;
         move_back();
+        direct = 0;
+        count = 0;
+        }
         break;
-      case 83:
+     /* case 83:
         //Serial.println("Stop");
         stop_move();
         //digitalWrite(LED, HIGH);
         //delay(500);
         //digitalWrite(LED, LOW);
-        break;
-}*/
+        break;*/
+}
+
+  if (flag_ch == 1){
+    if (flag_dist == 1) {
+      dist();
+      flag_dist = 0;
+    }
+    Serial.print("d = ");
+    Serial.print(d);
+    d = d + 2*PI*rad*dist();
+    Serial.println(d);
+  }
+
 
 if (!Serial3.available()){
-stop_move();
-digitalWrite(LED, HIGH);
+  if (flag_ch == 0 || d > distanse){
+  stop_move();
+  flag_ch = 0;
+  d = 0;
+  digitalWrite(LED, HIGH);
+  } else {
+    digitalWrite(LED, LOW);
+  }
 } else {
   digitalWrite(LED, LOW);
 }
@@ -149,34 +207,67 @@ void serialEvent3() {
   if (Serial3.available())
   {
     val = Serial3.read();
+    if (flag == 1) {
+      flag = 0;
+      count = val;
+      Serial.print("count = ");
+      Serial.println(count);
+      val = 0;
+    }
+    Serial.print("val = ");
     Serial.println(val);
         switch (val) {
       case 'a':
+        flag_ch = 0;
         //Serial.println("Turning left");
         turn_left();
-        delay(30);
+        delay(28);
         break;
-      case 119:
-        Serial.println("Moving forward");
+      case 'w':
+        flag_ch = 0;
+        //Serial.println("Moving forward");
         move_forvard();
-        delay(30);
+        delay(28);
         break;
       case 'd':
+        flag_ch = 0;
         //Serial.println("Turning right");
         turn_right();
-        delay(30);
+        delay(28);
         break;
       case 's':
+        flag_ch = 0;
         //Serial.println("Moving back");
         move_back();
-        delay(30);
+        delay(28);
         break;
-      case 83:
+      case 32:
+        flag_ch = 0;
         //Serial.println("Stop");
         stop_move();
         //digitalWrite(LED, HIGH);
         //delay(500);
         //digitalWrite(LED, LOW);
+        break;
+      case '1':
+        flag_ch = 0;
+        flag = 1;
+        direct = '1';
+        break;
+      case '2':
+        flag_ch = 0;
+        flag = 1;
+        direct = '2';
+        break;
+      case '3':
+        flag_ch = 0;
+        flag = 1;
+        direct = '3';
+        break;
+      case '4':
+        flag_ch = 0;
+        flag = 1;
+        direct = '4';
         break;
 }
     
