@@ -1,7 +1,7 @@
-const uint8_t EN1    = 6;       //Левые колёса
+const uint8_t EN1    = 6;       //Правые колёса
 const uint8_t L_PWM1 = 8;       
 const uint8_t R_PWM1 = 7;       
-const uint8_t EN2    = 10;      //Правые колёса
+const uint8_t EN2    = 10;      //Левые колёса
 const uint8_t L_PWM2 = 11;
 const uint8_t R_PWM2 = 12;
 const float rad = 0.06;          //Радиус колёс, м
@@ -24,7 +24,7 @@ void move_forvard() {
     delay(2);
     digitalWrite(L_PWM1, LOW );  
     digitalWrite(R_PWM1, HIGH);  
-    analogWrite (EN1,    200 ); 
+    analogWrite (EN1,    140 ); 
     delay(2); 
     digitalWrite(L_PWM2, LOW );  
     digitalWrite(R_PWM2, HIGH);  
